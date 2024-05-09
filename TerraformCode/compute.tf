@@ -1,23 +1,22 @@
 
 data "aws_ami" "server_ami" {
   most_recent = true
-  owners      = ["137112412989"]
-
+  owners      = ["099720109477"]
   filter {
     name   = "name"
-    values = ["al2023-ami-2023.4.20240429.0-kernel-6.1-x86_64"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
 }
 
 resource "aws_instance" "demo-server" {
-  ami           = data.aws_ami.server_ami.id
-  instance_type = var.instance_type
-  key_name      = var.key_pair
-  security_groups = ["demo-sg"]
+  ami             = data.aws_ami.server_ami.id
+  instance_type   = var.instance_type
+  key_name        = var.key_pair
 
-  # vpc_security_group_ids = [aws_security_group.demo-sg.id]
-  tags = {
-    Name = "Demo-Server"
-  }
+  vpc_security_group_ids = [aws_security_group.demo-sg.id]
+#   security_groups = ["demo-sg"]
+
+  subnet_id = aws_subnet.galaxy-public-subnet-01.id
+
 }
 
