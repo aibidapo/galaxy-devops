@@ -66,13 +66,6 @@ resource "aws_route_table_association" "galaxy-rta-public-subnet-02" {
 
 
 
-
-
-
-
-
-
-
 resource "aws_security_group" "demo-sg" {
   name        = "demo-sg"
   description = "Allow inbound traffic"

@@ -18,7 +18,7 @@ resource "aws_instance" "demo-server" {
 
   subnet_id = aws_subnet.galaxy-public-subnet-01.id
 
-  for_each = toset(["Jenkins-master", "Build-slave", "Ansible-server"])
+  for_each = toset(["Jenkins-master", "Build-slave", "Ansible"])
 
   # vpc_security_group_ids = [aws_security_group.demo-sg.id]
   tags = {

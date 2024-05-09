@@ -14,3 +14,10 @@ variable "ingress_ports" {
   default     = [22, 80, 443, 8080]
 }
 
+# ---------------------------------------------------------------------
+
+
+variable "main_instance_count" {
+    default = 2  
+}
+
