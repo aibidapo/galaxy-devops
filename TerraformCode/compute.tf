@@ -8,6 +8,7 @@ data "aws_ami" "server_ami" {
   }
 }
 
+/*
 resource "aws_instance" "demo-server" {
   ami             = data.aws_ami.server_ami.id
   instance_type   = var.instance_type
@@ -25,4 +26,26 @@ resource "aws_instance" "demo-server" {
     Name = "${each.key}"
   }
 }
+*/
 
+# Adding an elastic IP to the Jenkins server instance.
+resource "aws_instance" "demo-server" {
+  ami             = data.aws_ami.server_ami.id
+  instance_type   = var.instance_type
+  key_name        = var.key_pair
+
+  vpc_security_group_ids = [aws_security_group.demo-sg.id]
+  subnet_id              = aws_subnet.galaxy-public-subnet-01.id
+
+  for_each = toset(["Jenkins-master", "Build-slave", "Ansible"])
+
+  tags = {
+    Name = "${each.key}"
+  }
+}
+
+resource "aws_eip" "jenkins_eip" {
+  instance   = aws_instance.demo-server["Jenkins-master"].id  
+
+  depends_on = [aws_instance.demo-server["Jenkins-master"]]  
+}
