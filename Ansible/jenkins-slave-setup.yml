@@ -27,9 +27,29 @@
       dest: /opt
       remote_src: yes
 
+  - name: Install Docker
+    apt:
+      name: docker.io
+      state: present
+      install_recommends: yes
 
 
+  - name: Ensure Docker service is started and enabled
+    service:
+      name: docker
+      state: started
+      enabled: yes
 
-  
+  - name: Add current user to the docker group
+    user:
+      name: "{{ ansible_user_id }}"
+      groups: docker
+      append: yes
 
+  - name: Verify Docker installation
+    command: docker --version
+    register: docker_version
 
+  - name: Print Docker version
+    debug:
+      msg: "Docker version: {{ docker_version.stdout }}"
