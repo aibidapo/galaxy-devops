@@ -53,3 +53,9 @@
   - name: Print Docker version
     debug:
       msg: "Docker version: {{ docker_version.stdout }}"
+
+  - name: Change Permission on /var/run/docker.sock file
+    file:
+      path: /var/run/docker.sock
+      state: file
+      mode: 0777

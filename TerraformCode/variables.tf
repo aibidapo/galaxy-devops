@@ -11,7 +11,7 @@ variable "key_pair" {
 variable "ingress_ports" {
   description = "List of ingress ports"
   type        = list(number)
-  default     = [22, 80, 443, 8080]
+  default     = [22, 80, 443, 8080, 8000]
 }
 
 # ---------------------------------------------------------------------

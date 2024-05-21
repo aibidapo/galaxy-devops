@@ -1,4 +1,7 @@
-def registry = 'https://aicloudops.jfrog.io'
+def registry = 'aicloudops.jfrog.io'
+def repository = 'ai-cloudops-docker-local'
+def imageName = "${registry}/${repository}/ttrend"
+def version = '2.1.2'
 
 pipeline {
     agent {
@@ -9,6 +12,7 @@ pipeline {
 
     environment {
         PATH = "/opt/apache-maven-3.9.6/bin:$PATH"
+        DOCKER_BUILDKIT = '1' // Enable BuildKit
     }    
 
     stages {
@@ -20,13 +24,14 @@ pipeline {
             }
         }
 
-        stage("Test"){
+        stage("Test") {
             steps {
                 echo '<--------------- UnitTest Started --------------->'
                 sh 'mvn surefire-report:report'
                 echo '<--------------- UnitTest Completed --------------->'
             }
         }
+
         stage('SonarQube analysis') {
             environment {
                 scannerHome = tool 'ai-cloudops-sonar-scanner'
@@ -45,25 +50,25 @@ pipeline {
             }
         }
 
-        stage("Quality Gate"){
+        stage("Quality Gate") {
             steps {
                 script {
-                timeout(time: 1, unit: 'HOURS') { // Just in case something goes wrong, pipeline will be killed after a timeout
-            def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
-            if (qg.status != 'OK') {
-            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                    timeout(time: 1, unit: 'HOURS') { // Just in case something goes wrong, pipeline will be killed after a timeout
+                        def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
             }
         }
-        }
-            }
-        }              
-      
+
         stage("Jar Publish") {
             steps {
                 script {
                     echo '<--------------- Jar Publish Started --------------->'
-                    def server = Artifactory.newServer url: registry + "/artifactory", credentialsId: "artifactory-cred"
-                    def properties = "buildid=${env.BUILD_ID},commitid=${GIT_COMMIT}";
+                    def server = Artifactory.newServer url: 'https://' + registry + "/artifactory", credentialsId: "artifactory-cred"
+                    def properties = "buildid=${env.BUILD_ID},commitid=${GIT_COMMIT}"
                     def uploadSpec = """{
                           "files": [
                             {
@@ -81,6 +86,33 @@ pipeline {
                     echo '<--------------- Jar Publish Ended --------------->'  
                 }
             }   
-        }      
+        }
+
+        stage("Docker Build") {
+            steps {
+                script {
+                    echo '<--------------- Docker Build Started --------------->'
+                    // Ensure Buildx builder is initialized
+                    sh 'docker buildx create --use || true'
+                    sh 'docker buildx inspect --bootstrap'
+                    // Build the Docker image using BuildKit
+                    sh "docker buildx build --output type=docker -t ${imageName}:${version} ."
+                    echo '<--------------- Docker Build Ends --------------->'
+                }
+            }
+        }
+
+        stage("Docker Push") {
+            steps {
+                script {
+                    echo '<--------------- Docker Push Started --------------->'
+                    docker.withRegistry("https://${registry}", 'artifactory-cred') {
+                        // Push the Docker image to the registry
+                        sh "docker push ${imageName}:${version}"
+                    }
+                    echo '<--------------- Docker Push Ends --------------->'
+                }
+            }
+        }
     }
 }
