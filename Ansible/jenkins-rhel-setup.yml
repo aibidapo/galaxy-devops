@@ -102,4 +102,4 @@
     - name: Change permissions on /var/run/docker.sock
       file:
         path: /var/run/docker.sock
-        mode: '0666'
+        mode: '0777'
